@@ -1,267 +1,29 @@
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>🎃 ハロウィン・早押しタップ！</title>
-  <style>
-    body {
-      font-family: sans-serif;
-      background-color: #1a1a2e;
-      color: #fff;
-      text-align: center;
-      margin: 0;
-      padding: 15px;
-      user-select: none;
-    }
-    h1 { color: #ff9f43; font-size: 22px; margin-bottom: 10px; }
-    .card {
-      background: #16213e;
-      border-radius: 12px;
-      padding: 15px;
-      max-width: 380px;
-      margin: 0 auto;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.5);
-    }
-    input[type="text"] {
-      width: 80%;
-      padding: 10px;
-      font-size: 16px;
-      border-radius: 6px;
-      border: none;
-      margin-bottom: 15px;
-      text-align: center;
-    }
-    button {
-      background: #ff6b6b;
-      color: white;
-      border: none;
-      padding: 12px 24px;
-      font-size: 18px;
-      font-weight: bold;
-      border-radius: 30px;
-      cursor: pointer;
-    }
-    #play-area {
-      position: relative;
-      width: 100%;
-      height: 280px;
-      background: #0f172a;
-      border-radius: 10px;
-      margin: 15px 0;
-      overflow: hidden;
-      border: 2px solid #334155;
-    }
-    #target-pumpkin {
-      position: absolute;
-      width: 75px;
-      height: 75px;
-      border-radius: 50%;
-      background: #ff9f43;
-      display: none;
-      align-items: center;
-      justify-content: center;
-      font-size: 42px;
-      cursor: pointer;
-      box-shadow: 0 0 15px #ff9f43;
-      user-select: none;
-      -webkit-tap-highlight-color: transparent;
-    }
-    #target-pumpkin:active { transform: scale(0.9); }
-    .hidden { display: none !important; }
-    .score-display { font-size: 48px; color: #feca57; font-weight: bold; margin: 10px 0; }
-    .feedback { font-size: 18px; height: 24px; color: #48dbfb; font-weight: bold; }
-    .info-text { font-size: 14px; color: #cbd5e1; }
-  </style>
-</head>
-<body>
-
-<div class="card">
-  <h1>🎃 ハロウィン・早押しタップ！ 🎃</h1>
-
-  <!-- 1. スタート画面 -->
+<!-- 1. スタート画面 -->
   <div id="start-screen">
-    <p class="info-text">出てくるカボチャをどれだけ早く押せるか競うゲーム！（全5回）</p>
-    <input type="text" id="username" placeholder="お名前（ダンサー名）" />
+    <p class="info-text">カボチャをどれだけ早く押せるかゲーム！（全5回）</p>
+    
+    <!-- ▼ ここから差し替え ▼ -->
+    <p class="info-text" style="font-size: 12px; margin-bottom: 5px;">お名前を選んでね（直接入力もOK！）</p>
+    <input type="text" id="username" list="dancer-list" placeholder="タップして名前を選択/入力" />
+
+    <datalist id="dancer-list">
+      <!-- パパさん・ママさん・先生の名前をここにズラッと並べる -->
+      <option value="KK"></option>
+      <option value="JJ"></option>
+      <option value="トミー"></option>
+      <option value="ジュリー"></option>
+      <option value="ロッキー"></option>
+      <option value="シュート"></option>
+      <option value="イズ"></option>
+      <option value="ダッツ"></option>
+      <option value="アッキー"></option>
+      <option value="美名先生"></option>
+      <option value="チサちゃん"></option>
+      <option value="ナオちゃん"></option>
+      <option value="ミソラ"></option>
+    </datalist>
+    <!-- ▲ ここまで差し替え ▲ -->
+
     <br>
     <button onclick="startGame()">ゲームスタート！</button>
   </div>
-
-  <!-- 2. プレイ画面 -->
-  <div id="game-screen" class="hidden">
-    <div id="status" class="info-text">画面をよく見てね...</div>
-    <div class="feedback" id="feedback"></div>
-    
-    <div id="play-area">
-      <div id="target-pumpkin" onclick="handleTap()">🎃</div>
-    </div>
-    
-    <p class="info-text">残り: <span id="remaining" style="font-weight:bold; color:#ff9f43;">5</span> 回</p>
-  </div>
-
-  <!-- 3. 結果画面 -->
-  <div id="result-screen" class="hidden">
-    <h2>🎉 おつかれさまでした！</h2>
-    <p><strong id="res-name"></strong> さんのスコア</p>
-    <div class="score-display" id="final-score">0 点</div>
-    
-    <!-- 自動送信ボタン -->
-    <button id="send-btn" onclick="sendScore()" style="background: #ff9f43; margin-bottom: 12px; width: 100%;">
-      🚀 スコアを送信する！
-    </button>
-    <div id="send-status" style="font-size: 14px; color: #48dbfb; margin-bottom: 15px;"></div>
-
-    <button onclick="resetGame()" style="background: #555; font-size: 14px;">もう一度あそぶ</button>
-  </div>
-</div>
-
-<script>
-  // ★ここにGASでデプロイしたウェブアプリURLを貼り付けます
-  const GAS_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbyk8BaR2Jg7MzADUYgx_iQs2PF3T5R8caeTci94YSnn1RnPK9AwEmWG3h1nfk3JgDA/exec";
-
-  let playerName = "";
-  let currentCount = 0;
-  const maxCount = 5;
-  let appearanceTime = 0;
-  let scores = [];
-  let timerId = null;
-
-  function startGame() {
-    const nameInput = document.getElementById('username').value.trim();
-    if (!nameInput) {
-      alert("名前を入力してください！※自分の名前で遊んでね！");
-      return;
-    }
-    playerName = nameInput;
-    scores = [];
-    currentCount = 0;
-
-    document.getElementById('start-screen').classList.add('hidden');
-    document.getElementById('result-screen').classList.add('hidden');
-    document.getElementById('game-screen').classList.remove('hidden');
-
-    document.getElementById('target-pumpkin').style.display = 'none';
-
-    nextTurn();
-  }
-
-  function nextTurn() {
-    if (currentCount >= maxCount) {
-      endGame();
-      return;
-    }
-
-    currentCount++;
-    document.getElementById('remaining').innerText = maxCount - currentCount + 1;
-    document.getElementById('feedback').innerText = "";
-    document.getElementById('status').innerText = "集中...どこに出るかな？";
-    
-    document.getElementById('target-pumpkin').style.display = 'none';
-
-    const delay = Math.floor(Math.random() * 2000) + 1500;
-
-    timerId = setTimeout(() => {
-      showPumpkin();
-    }, delay);
-  }
-
-  function showPumpkin() {
-    const area = document.getElementById('play-area');
-    const pumpkin = document.getElementById('target-pumpkin');
-
-    const maxX = area.clientWidth - 75;
-    const maxY = area.clientHeight - 75;
-
-    const randomX = Math.floor(Math.random() * maxX);
-    const randomY = Math.floor(Math.random() * maxY);
-
-    pumpkin.style.left = randomX + 'px';
-    pumpkin.style.top = randomY + 'px';
-
-    pumpkin.style.display = 'flex';
-    document.getElementById('status').innerText = "出た！押せ！！";
-    
-    appearanceTime = Date.now();
-  }
-
-  function handleTap() {
-    if (!appearanceTime) return;
-
-    const reactionTime = Date.now() - appearanceTime;
-    appearanceTime = 0;
-
-    document.getElementById('target-pumpkin').style.display = 'none';
-
-    // 【判定をゆるく調整！】
-    // 300ms以下で満点100pt、減点ペースも緩やかに設定
-    let point = Math.max(0, 100 - Math.floor((reactionTime - 300) / 10));
-    scores.push(point);
-
-    let fb = "超神速!!";
-    if (reactionTime > 300) fb = "PERFECT!!";
-    if (reactionTime > 450) fb = "GREAT!";
-    if (reactionTime > 650) fb = "GOOD";
-    if (reactionTime > 900) fb = "SLOW...";
-
-    document.getElementById('feedback').innerText = `${fb} (${reactionTime}ms)`;
-
-    setTimeout(nextTurn, 1000);
-  }
-
-  function endGame() {
-    document.getElementById('game-screen').classList.add('hidden');
-    document.getElementById('result-screen').classList.remove('hidden');
-
-    const total = scores.reduce((a, b) => a + b, 0);
-    const avgScore = Math.round(total / maxCount);
-
-    document.getElementById('res-name').innerText = playerName;
-    document.getElementById('final-score').innerText = avgScore + " 点";
-
-    // 送信ボタンの初期状態リセット
-    const btn = document.getElementById('send-btn');
-    btn.style.display = "block";
-    btn.disabled = false;
-    document.getElementById('send-status').innerText = "";
-  }
-
-  // スコアの自動送信機能（Googleログイン不要）
-  function sendScore() {
-    const btn = document.getElementById('send-btn');
-    const status = document.getElementById('send-status');
-    const avgScore = parseInt(document.getElementById('final-score').innerText, 10);
-
-    if (GAS_WEBAPP_URL === "YOUR_GAS_WEBAPP_URL_HERE") {
-      alert("管理者用：GASのWebアプリURLがセットされていません。");
-      return;
-    }
-
-    btn.disabled = true;
-    status.innerText = "送信中...";
-
-    fetch(GAS_WEBAPP_URL, {
-      method: "POST",
-      mode: "no-cors",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        name: playerName,
-        score: avgScore
-      })
-    })
-    .then(() => {
-      status.innerText = "✅ スコアを送信しました！";
-      btn.style.display = "none";
-    })
-    .catch(() => {
-      status.innerText = "❌ 送信に失敗しました。もう一度お試しください。";
-      btn.disabled = false;
-    });
-  }
-
-  function resetGame() {
-    document.getElementById('result-screen').classList.add('hidden');
-    document.getElementById('start-screen').classList.remove('hidden');
-  }
-</script>
-</body>
-</html>

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>🎃 ハロウィン早押しタップ！</title>
+  <title>🎃 ハロウィン・早押しタップ！</title>
   <style>
     body {
       font-family: sans-serif;
@@ -42,7 +42,6 @@
       border-radius: 30px;
       cursor: pointer;
     }
-    /* カボチャが出現するプレイエリア */
     #play-area {
       position: relative;
       width: 100%;
@@ -53,17 +52,16 @@
       overflow: hidden;
       border: 2px solid #334155;
     }
-    /* 出現するカボチャボタン（初期状態は完全に非表示） */
     #target-pumpkin {
       position: absolute;
-      width: 70px;
-      height: 70px;
+      width: 75px;
+      height: 75px;
       border-radius: 50%;
       background: #ff9f43;
-      display: none; /* 初期状態は非表示 */
+      display: none;
       align-items: center;
       justify-content: center;
-      font-size: 40px;
+      font-size: 42px;
       cursor: pointer;
       box-shadow: 0 0 15px #ff9f43;
       user-select: none;
@@ -71,7 +69,7 @@
     }
     #target-pumpkin:active { transform: scale(0.9); }
     .hidden { display: none !important; }
-    .score-display { font-size: 44px; color: #feca57; font-weight: bold; margin: 10px 0; }
+    .score-display { font-size: 48px; color: #feca57; font-weight: bold; margin: 10px 0; }
     .feedback { font-size: 18px; height: 24px; color: #48dbfb; font-weight: bold; }
     .info-text { font-size: 14px; color: #cbd5e1; }
   </style>
@@ -79,11 +77,11 @@
 <body>
 
 <div class="card">
-  <h1>🎃ハロウィン早押しタップ🎃</h1>
+  <h1>🎃 ハロウィン・早押しタップ！ 🎃</h1>
 
   <!-- 1. スタート画面 -->
   <div id="start-screen">
-    <p class="info-text">出てくるカボチャを早く押すゲーム！（全5回）</p>
+    <p class="info-text">出てくるカボチャをどれだけ早く押せるか競うゲーム！（全5回）</p>
     <input type="text" id="username" placeholder="お名前（ダンサー名）" />
     <br>
     <button onclick="startGame()">ゲームスタート！</button>
@@ -95,7 +93,6 @@
     <div class="feedback" id="feedback"></div>
     
     <div id="play-area">
-      <!-- 初回は完全に見えない状態 -->
       <div id="target-pumpkin" onclick="handleTap()">🎃</div>
     </div>
     
@@ -107,12 +104,21 @@
     <h2>🎉 おつかれさまでした！</h2>
     <p><strong id="res-name"></strong> さんのスコア</p>
     <div class="score-display" id="final-score">0 点</div>
-    <p class="info-text" style="color: #94a3b8;">この画面をスクリーンショットして<br>見せてね！</p>
-    <button onclick="resetGame()">もう一度あそぶ</button>
+    
+    <!-- 自動送信ボタン -->
+    <button id="send-btn" onclick="sendScore()" style="background: #ff9f43; margin-bottom: 12px; width: 100%;">
+      🚀 スコアを送信する！
+    </button>
+    <div id="send-status" style="font-size: 14px; color: #48dbfb; margin-bottom: 15px;"></div>
+
+    <button onclick="resetGame()" style="background: #555; font-size: 14px;">もう一度あそぶ</button>
   </div>
 </div>
 
 <script>
+  // ★ここにGASでデプロイしたウェブアプリURLを貼り付けます
+  const GAS_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbyk8BaR2Jg7MzADUYgx_iQs2PF3T5R8caeTci94YSnn1RnPK9AwEmWG3h1nfk3JgDA/exec";
+
   let playerName = "";
   let currentCount = 0;
   const maxCount = 5;
@@ -134,7 +140,6 @@
     document.getElementById('result-screen').classList.add('hidden');
     document.getElementById('game-screen').classList.remove('hidden');
 
-    // 最初に確実にカボチャを消しておく
     document.getElementById('target-pumpkin').style.display = 'none';
 
     nextTurn();
@@ -151,10 +156,8 @@
     document.getElementById('feedback').innerText = "";
     document.getElementById('status').innerText = "集中...どこに出るかな？";
     
-    // 待機中はカボチャを絶対に見せない
     document.getElementById('target-pumpkin').style.display = 'none';
 
-    // 1.5〜3.5秒のランダムな待ち時間後にカボチャを出現させる
     const delay = Math.floor(Math.random() * 2000) + 1500;
 
     timerId = setTimeout(() => {
@@ -166,9 +169,8 @@
     const area = document.getElementById('play-area');
     const pumpkin = document.getElementById('target-pumpkin');
 
-    // プレイエリア内でランダムな位置（端からはみ出さないよう計算）
-    const maxX = area.clientWidth - 70;
-    const maxY = area.clientHeight - 70;
+    const maxX = area.clientWidth - 75;
+    const maxY = area.clientHeight - 75;
 
     const randomX = Math.floor(Math.random() * maxX);
     const randomY = Math.floor(Math.random() * maxY);
@@ -176,37 +178,33 @@
     pumpkin.style.left = randomX + 'px';
     pumpkin.style.top = randomY + 'px';
 
-    // 出現の瞬間だけ flex で表示
     pumpkin.style.display = 'flex';
     document.getElementById('status').innerText = "出た！押せ！！";
     
-    // 出現した瞬間の時間を記録
     appearanceTime = Date.now();
   }
 
   function handleTap() {
     if (!appearanceTime) return;
 
-    // タップした時間と出現時間の差（反応速度：ミリ秒）
     const reactionTime = Date.now() - appearanceTime;
     appearanceTime = 0;
 
-    // タップしたら即座に消す
     document.getElementById('target-pumpkin').style.display = 'none';
 
-    // 反応スピードに応じたスコア計算（200ms以下で満点100pt）
-    let point = Math.max(0, 100 - Math.floor((reactionTime - 200) / 8));
+    // 【判定をゆるく調整！】
+    // 300ms以下で満点100pt、減点ペースも緩やかに設定
+    let point = Math.max(0, 100 - Math.floor((reactionTime - 300) / 10));
     scores.push(point);
 
     let fb = "超神速!!";
-    if (reactionTime > 250) fb = "PERFECT!!";
-    if (reactionTime > 350) fb = "GREAT!";
-    if (reactionTime > 500) fb = "GOOD";
-    if (reactionTime > 700) fb = "SLOW...";
+    if (reactionTime > 300) fb = "PERFECT!!";
+    if (reactionTime > 450) fb = "GREAT!";
+    if (reactionTime > 650) fb = "GOOD";
+    if (reactionTime > 900) fb = "SLOW...";
 
     document.getElementById('feedback').innerText = `${fb} (${reactionTime}ms)`;
 
-    // 次のターンへ
     setTimeout(nextTurn, 1000);
   }
 
@@ -214,12 +212,50 @@
     document.getElementById('game-screen').classList.add('hidden');
     document.getElementById('result-screen').classList.remove('hidden');
 
-    // 5回の平均スコア算出
     const total = scores.reduce((a, b) => a + b, 0);
     const avgScore = Math.round(total / maxCount);
 
     document.getElementById('res-name').innerText = playerName;
     document.getElementById('final-score').innerText = avgScore + " 点";
+
+    // 送信ボタンの初期状態リセット
+    const btn = document.getElementById('send-btn');
+    btn.style.display = "block";
+    btn.disabled = false;
+    document.getElementById('send-status').innerText = "";
+  }
+
+  // スコアの自動送信機能（Googleログイン不要）
+  function sendScore() {
+    const btn = document.getElementById('send-btn');
+    const status = document.getElementById('send-status');
+    const avgScore = parseInt(document.getElementById('final-score').innerText, 10);
+
+    if (GAS_WEBAPP_URL === "YOUR_GAS_WEBAPP_URL_HERE") {
+      alert("管理者用：GASのWebアプリURLがセットされていません。");
+      return;
+    }
+
+    btn.disabled = true;
+    status.innerText = "送信中...";
+
+    fetch(GAS_WEBAPP_URL, {
+      method: "POST",
+      mode: "no-cors",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name: playerName,
+        score: avgScore
+      })
+    })
+    .then(() => {
+      status.innerText = "✅ スコアを送信しました！";
+      btn.style.display = "none";
+    })
+    .catch(() => {
+      status.innerText = "❌ 送信に失敗しました。もう一度お試しください。";
+      btn.disabled = false;
+    });
   }
 
   function resetGame() {

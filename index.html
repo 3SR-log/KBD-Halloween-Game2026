@@ -83,24 +83,31 @@
   <div id="start-screen">
     <p class="info-text">カボチャをどれだけ早く押せるかゲーム！（全5回）</p>
     
-    <p class="info-text" style="font-size: 12px; margin-bottom: 5px;">お名前を選んでね（直接入力もOK！）</p>
-    <input type="text" id="username" list="dancer-list" placeholder="タップして名前を選択/入力" />
+    <p class="info-text" style="font-size: 12px; margin-bottom: 5px;">お名前を選んでね</p>
 
-    <datalist id="dancer-list">
-      <option value="KK"></option>
-      <option value="JJ"></option>
-      <option value="トミー"></option>
-      <option value="ジュリー"></option>
-      <option value="ロッキー"></option>
-      <option value="シュート"></option>
-      <option value="イズ"></option>
-      <option value="ダッツ"></option>
-      <option value="アッキー"></option>
-      <option value="美名先生"></option>
-      <option value="チサちゃん"></option>
-      <option value="ナオちゃん"></option>
-      <option value="ミソラ"></option>
-    </datalist>
+    <!-- プルダウン選択肢 -->
+    <select id="name-select" onchange="toggleCustomInput()" style="width: 85%; padding: 10px; font-size: 16px; border-radius: 6px; border: none; margin-bottom: 10px; text-align: center; background: #fff; color: #333;">
+      <option value="">-- 名前を選択してください --</option>
+      <option value="KK">KK</option>
+      <option value="JJ">JJ</option>
+      <option value="トミー">トミー</option>
+      <option value="ジュリー">ジュリー</option>
+      <option value="ロッキー">ロッキー</option>
+      <option value="シュート">シュート</option>
+      <option value="イズ">イズ</option>
+      <option value="ダッツ">ダッツ</option>
+      <option value="アッキー">アッキー</option>
+      <option value="美名先生">美名先生</option>
+      <option value="チサちゃん">チサちゃん</option>
+      <option value="ナオちゃん">ナオちゃん</option>
+      <option value="ミソラ">ミソラ</option>
+      <option value="OTHER">✨ その他（直接入力）</option>
+    </select>
+
+    <!-- その他を選んだ時だけ出る直接入力欄 -->
+    <div id="custom-name-container" class="hidden">
+      <input type="text" id="custom-username" placeholder="名前を直接入力" style="margin-bottom: 10px;" />
+    </div>
 
     <br>
     <button onclick="startGame()">ゲームスタート！</button>
@@ -144,12 +151,32 @@
   let scores = [];
   let timerId = null;
 
+  // 「その他」を選んだ時に入力欄を出す関数
+  function toggleCustomInput() {
+    const select = document.getElementById('name-select');
+    const container = document.getElementById('custom-name-container');
+    if (select.value === 'OTHER') {
+      container.classList.remove('hidden');
+    } else {
+      container.classList.add('hidden');
+    }
+  }
+
   function startGame() {
-    const nameInput = document.getElementById('username').value.trim();
+    const selectValue = document.getElementById('name-select').value;
+    let nameInput = "";
+
+    if (selectValue === 'OTHER') {
+      nameInput = document.getElementById('custom-username').value.trim();
+    } else {
+      nameInput = selectValue;
+    }
+
     if (!nameInput) {
-      alert("名前を入力してください！※自分の名前で遊んでね！");
+      alert("名前を選択するか、入力してください！※自分の名前で遊んでね！");
       return;
     }
+    
     playerName = nameInput;
     scores = [];
     currentCount = 0;

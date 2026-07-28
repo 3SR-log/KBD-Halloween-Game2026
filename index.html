@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🎃 ハロウィン・リズムタップ！</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      background-color: #1a1a2e;
+      color: #fff;
+      text-align: center;
+      margin: 0;
+      padding: 20px;
+      user-select: none;
+    }
+    h1 { color: #ff9f43; font-size: 24px; }
+    .card {
+      background: #16213e;
+      border-radius: 12px;
+      padding: 20px;
+      max-width: 400px;
+      margin: 0 auto;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+    }
+    input[type="text"] {
+      width: 80%;
+      padding: 10px;
+      font-size: 16px;
+      border-radius: 6px;
+      border: none;
+      margin-bottom: 15px;
+      text-align: center;
+    }
+    button {
+      background: #ff6b6b;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      font-size: 18px;
+      font-weight: bold;
+      border-radius: 30px;
+      cursor: pointer;
+    }
+    #tap-zone {
+      width: 180px;
+      height: 180px;
+      border-radius: 50%;
+      background: #ff9f43;
+      margin: 30px auto;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 64px;
+      cursor: pointer;
+      box-shadow: 0 0 20px #ff9f43;
+      transition: transform 0.05s;
+    }
+    #tap-zone:active { transform: scale(0.92); }
+    .hidden { display: none; }
+    .score-display { font-size: 48px; color: #feca57; font-weight: bold; margin: 10px 0; }
+    .feedback { font-size: 20px; height: 30px; color: #48dbfb; font-weight: bold; }
+  </style>
+</head>
+<body>
+
+<div class="card">
+  <h1>🎃 ハロウィン・リズムタップ 🎃</h1>
+
+  <!-- 1. ユーザー名入力画面 -->
+  <div id="start-screen">
+    <p>リズムに合わせてタイミングよくカボチャをタップ！</p>
+    <input type="text" id="username" placeholder="お名前（ダンサー名）" />
+    <br>
+    <button onclick="startGame()">ゲームスタート！</button>
+  </div>
+
+  <!-- 2. ゲームプレイ画面 -->
+  <div id="game-screen" class="hidden">
+    <div id="status">準備...</div>
+    <div class="feedback" id="feedback"></div>
+    <div id="tap-zone" onclick="handleTap()">🎃</div>
+    <p>残り回数: <span id="remaining">10</span></p>
+  </div>
+
+  <!-- 3. 結果画面 -->
+  <div id="result-screen" class="hidden">
+    <h2>🎉 おつかれさまでした！</h2>
+    <p><strong id="res-name"></strong> さんのスコア</p>
+    <div class="score-display" id="final-score">0 点</div>
+    <p style="font-size: 14px; color: #ccc;">この画面をスクリーンショットして<br>管理者に送るか見せてね！</p>
+    <button onclick="resetGame()">もう一度あそぶ</button>
+  </div>
+</div>
+
+<script>
+  let playerName = "";
+  let currentCount = 0;
+  const maxCount = 10;
+  let targetTime = 0;
+  let scores = [];
+  let timerId = null;
+
+  function startGame() {
+    const nameInput = document.getElementById('username').value.trim();
+    if (!nameInput) {
+      alert("名前を入力してください！");
+      return;
+    }
+    playerName = nameInput;
+    scores = [];
+    currentCount = 0;
+
+    document.getElementById('start-screen').classList.add('hidden');
+    document.getElementById('result-screen').classList.add('hidden');
+    document.getElementById('game-screen').classList.remove('hidden');
+
+    nextTurn();
+  }
+
+  function nextTurn() {
+    if (currentCount >= maxCount) {
+      endGame();
+      return;
+    }
+
+    currentCount++;
+    document.getElementById('remaining').innerText = maxCount - currentCount + 1;
+    document.getElementById('feedback').innerText = "";
+    document.getElementById('status').innerText = "目を閉じて…リズムを感じろ！";
+
+    // 2〜4秒のランダムなタイマーで「ジャストタイミング」を設定
+    const delay = Math.floor(Math.random() * 2000) + 2000;
+    targetTime = Date.now() + delay;
+
+    // 光るタイミングを視覚的・音的に提示する代わりの合図
+    timerId = setTimeout(() => {
+      document.getElementById('status').innerText = "今だ！！タップ！";
+      document.getElementById('tap-zone').style.background = "#ff6b6b";
+    }, delay);
+  }
+
+  function handleTap() {
+    if (!targetTime) return;
+
+    const tapTime = Date.now();
+    const diff = Math.abs(tapTime - targetTime); // ズレ（ミリ秒）
+
+    clearTimeout(timerId);
+    document.getElementById('tap-zone').style.background = "#ff9f43";
+
+    // ズレが少ないほど高得点（最大100pt）
+    let point = Math.max(0, 100 - Math.floor(diff / 10));
+    scores.push(point);
+
+    let fb = "PERFECT!!";
+    if (diff > 100) fb = "GREAT!";
+    if (diff > 300) fb = "GOOD";
+    if (diff > 500) fb = "BAD...";
+    document.getElementById('feedback').innerText = `${fb} (${diff}ms ズレ)`;
+
+    targetTime = 0;
+    setTimeout(nextTurn, 1200);
+  }
+
+  function endGame() {
+    document.getElementById('game-screen').classList.add('hidden');
+    document.getElementById('result-screen').classList.remove('hidden');
+
+    // 平均スコア算出
+    const total = scores.reduce((a, b) => a + b, 0);
+    const avgScore = Math.round(total / maxCount);
+
+    document.getElementById('res-name').innerText = playerName;
+    document.getElementById('final-score').innerText = avgScore + " 点";
+  }
+
+  function resetGame() {
+    document.getElementById('result-screen').classList.add('hidden');
+    document.getElementById('start-screen').classList.remove('hidden');
+  }
+</script>
+</body>
+</html>

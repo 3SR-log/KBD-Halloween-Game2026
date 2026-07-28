@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>🎃 ハロウィン・リズムタップ！</title>
+  <title>🎃 ハロウィン・早押しタップ！</title>
   <style>
     body {
       font-family: sans-serif;
@@ -11,15 +11,15 @@
       color: #fff;
       text-align: center;
       margin: 0;
-      padding: 20px;
+      padding: 15px;
       user-select: none;
     }
-    h1 { color: #ff9f43; font-size: 24px; }
+    h1 { color: #ff9f43; font-size: 22px; margin-bottom: 10px; }
     .card {
       background: #16213e;
       border-radius: 12px;
-      padding: 20px;
-      max-width: 400px;
+      padding: 15px;
+      max-width: 380px;
       margin: 0 auto;
       box-shadow: 0 4px 10px rgba(0,0,0,0.5);
     }
@@ -42,45 +42,63 @@
       border-radius: 30px;
       cursor: pointer;
     }
-    #tap-zone {
-      width: 180px;
-      height: 180px;
+    /* カボチャが出現するプレイエリア */
+    #play-area {
+      position: relative;
+      width: 100%;
+      height: 280px;
+      background: #0f172a;
+      border-radius: 10px;
+      margin: 15px 0;
+      overflow: hidden;
+      border: 2px solid #334155;
+    }
+    /* 出現するカボチャボタン */
+    #target-pumpkin {
+      position: absolute;
+      width: 70px;
+      height: 70px;
       border-radius: 50%;
       background: #ff9f43;
-      margin: 30px auto;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 64px;
+      font-size: 40px;
       cursor: pointer;
-      box-shadow: 0 0 20px #ff9f43;
-      transition: transform 0.05s;
+      box-shadow: 0 0 15px #ff9f43;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
     }
-    #tap-zone:active { transform: scale(0.92); }
+    #target-pumpkin:active { transform: scale(0.9); }
     .hidden { display: none; }
-    .score-display { font-size: 48px; color: #feca57; font-weight: bold; margin: 10px 0; }
-    .feedback { font-size: 20px; height: 30px; color: #48dbfb; font-weight: bold; }
+    .score-display { font-size: 44px; color: #feca57; font-weight: bold; margin: 10px 0; }
+    .feedback { font-size: 18px; height: 24px; color: #48dbfb; font-weight: bold; }
+    .info-text { font-size: 14px; color: #cbd5e1; }
   </style>
 </head>
 <body>
 
 <div class="card">
-  <h1>🎃 ハロウィン・リズムタップ 🎃</h1>
+  <h1>🎃 ハロウィン・早押しタップ！ 🎃</h1>
 
-  <!-- 1. ユーザー名入力画面 -->
+  <!-- 1. スタート画面 -->
   <div id="start-screen">
-    <p>リズムに合わせてタイミングよくカボチャをタップ！（全5回）</p>
+    <p class="info-text">出てくるカボチャをどれだけ早く押せるか競うゲーム！（全5回）</p>
     <input type="text" id="username" placeholder="お名前（ダンサー名）" />
     <br>
     <button onclick="startGame()">ゲームスタート！</button>
   </div>
 
-  <!-- 2. ゲームプレイ画面 -->
+  <!-- 2. プレイ画面 -->
   <div id="game-screen" class="hidden">
-    <div id="status">準備...</div>
+    <div id="status" class="info-text">画面をよく見てね...</div>
     <div class="feedback" id="feedback"></div>
-    <div id="tap-zone" onclick="handleTap()">🎃</div>
-    <p>残り回数: <span id="remaining">5</span></p>
+    
+    <div id="play-area">
+      <div id="target-pumpkin" class="hidden" onclick="handleTap()">🎃</div>
+    </div>
+    
+    <p class="info-text">残り: <span id="remaining" style="font-weight:bold; color:#ff9f43;">5</span> 回</p>
   </div>
 
   <!-- 3. 結果画面 -->
@@ -88,7 +106,7 @@
     <h2>🎉 おつかれさまでした！</h2>
     <p><strong id="res-name"></strong> さんのスコア</p>
     <div class="score-display" id="final-score">0 点</div>
-    <p style="font-size: 14px; color: #ccc;">この画面をスクリーンショットして<br>管理者に送るか見せてね！</p>
+    <p class="info-text" style="color: #94a3b8;">この画面をスクリーンショットして<br>見せてね！</p>
     <button onclick="resetGame()">もう一度あそぶ</button>
   </div>
 </div>
@@ -97,7 +115,7 @@
   let playerName = "";
   let currentCount = 0;
   const maxCount = 5;
-  let targetTime = 0;
+  let appearanceTime = 0;
   let scores = [];
   let timerId = null;
 
@@ -127,47 +145,69 @@
     currentCount++;
     document.getElementById('remaining').innerText = maxCount - currentCount + 1;
     document.getElementById('feedback').innerText = "";
-    document.getElementById('status').innerText = "目を閉じて…リズムを感じろ！";
+    document.getElementById('status').innerText = "集中...どこに出るかな？";
+    document.getElementById('target-pumpkin').classList.add('hidden');
 
-    // 2〜4秒のランダムなタイマーで「ジャストタイミング」を設定
-    const delay = Math.floor(Math.random() * 2000) + 2000;
-    targetTime = Date.now() + delay;
+    // 1.5〜3.5秒のランダムな待ち時間後にカボチャを出現させる
+    const delay = Math.floor(Math.random() * 2000) + 1500;
 
-    // 光るタイミングを視覚的・音的に提示する代わりの合図
     timerId = setTimeout(() => {
-      document.getElementById('status').innerText = "今だ！！タップ！";
-      document.getElementById('tap-zone').style.background = "#ff6b6b";
+      showPumpkin();
     }, delay);
   }
 
+  function showPumpkin() {
+    const area = document.getElementById('play-area');
+    const pumpkin = document.getElementById('target-pumpkin');
+
+    // プレイエリア内でランダムな位置（端からはみ出さないよう計算）
+    const maxX = area.clientWidth - 70;
+    const maxY = area.clientHeight - 70;
+
+    const randomX = Math.floor(Math.random() * maxX);
+    const randomY = Math.floor(Math.random() * maxY);
+
+    pumpkin.style.left = randomX + 'px';
+    pumpkin.style.top = randomY + 'px';
+
+    pumpkin.classList.remove('hidden');
+    document.getElementById('status').innerText = "出た！押せ！！";
+    
+    // 出現した瞬間の時間を記録
+    appearanceTime = Date.now();
+  }
+
   function handleTap() {
-    if (!targetTime) return;
+    if (!appearanceTime) return;
 
-    const tapTime = Date.now();
-    const diff = Math.abs(tapTime - targetTime); // ズレ（ミリ秒）
+    // タップした時間と出現時間の差（反応速度：ミリ秒）
+    const reactionTime = Date.now() - appearanceTime;
+    appearanceTime = 0;
 
-    clearTimeout(timerId);
-    document.getElementById('tap-zone').style.background = "#ff9f43";
+    document.getElementById('target-pumpkin').classList.add('hidden');
 
-    // ズレが少ないほど高得点（最大100pt）
-    let point = Math.max(0, 100 - Math.floor(diff / 10));
+    // 反応スピードに応じたスコア計算（200ms以下で満点100pt）
+    // 反応が遅いほど点数が下がる（最小0点）
+    let point = Math.max(0, 100 - Math.floor((reactionTime - 200) / 8));
     scores.push(point);
 
-    let fb = "PERFECT!!";
-    if (diff > 100) fb = "GREAT!";
-    if (diff > 300) fb = "GOOD";
-    if (diff > 500) fb = "BAD...";
-    document.getElementById('feedback').innerText = `${fb} (${diff}ms ズレ)`;
+    let fb = "超神速!!";
+    if (reactionTime > 250) fb = "PERFECT!!";
+    if (reactionTime > 350) fb = "GREAT!";
+    if (reactionTime > 500) fb = "GOOD";
+    if (reactionTime > 700) fb = "SLOW...";
 
-    targetTime = 0;
-    setTimeout(nextTurn, 1200);
+    document.getElementById('feedback').innerText = `${fb} (${reactionTime}ms)`;
+
+    // 次のターンへ
+    setTimeout(nextTurn, 1000);
   }
 
   function endGame() {
     document.getElementById('game-screen').classList.add('hidden');
     document.getElementById('result-screen').classList.remove('hidden');
 
-    // 平均スコア算出
+    // 5回の平均スコア算出
     const total = scores.reduce((a, b) => a + b, 0);
     const avgScore = Math.round(total / maxCount);
 
